@@ -1,0 +1,2 @@
+port: <http port>
+db_path: <path to sqlite database file>
