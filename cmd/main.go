@@ -13,6 +13,7 @@ import (
 	"urlshort/config"
 	"urlshort/router"
 	"urlshort/storage"
+	"urlshort/middleware"
 )
 
 func main() {
@@ -32,12 +33,14 @@ func main() {
 	}
 
 	r := router.NewRouter()
-	r.Handle("/", api.RedirectHandler(linkStorage))
-	r.Handle("/api/v1/links", api.CreateLinkHandler(linkStorage))
+	r.GET("/", api.RedirectHandler(linkStorage))
+	r.POST("/api/v1/links", api.CreateLinkHandler(linkStorage))
+
+	loggingMiddleware := middleware.RequestLogger(logger)
 
 	srv := &http.Server{
 		Addr:         cfg.Port,
-		Handler:      r,
+		Handler:      loggingMiddleware(r),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  1 * time.Minute,

@@ -1,27 +1,47 @@
 package router
 
-import "net/http"
+import (
+	"net/http"
+	"urlshort/api"
+	)
 
 type Router struct {
-	routes map[string]http.Handler
+	routes map[string]map[string]http.Handler
 }
 
 func NewRouter() *Router {
 	return &Router{
-		routes: make(map[string]http.Handler),
+		routes: make(map[string]map[string]http.Handler),
 	}
 }
 
-func (r *Router) Handle(path string, handler http.Handler) {
-	r.routes[path] = handler
+func (r *Router) registerRoute(path, method string, handler http.Handler) {
+	if _, ok := r.routes[path]; !ok {
+		r.routes[path] = make(map[string]http.Handler)
+	}
+	r.routes[path][method] = handler
+}
+
+func (r *Router) GET(path string, handler http.Handler) {
+	r.registerRoute(path, http.MethodGet, handler)
+}
+
+func (r *Router) POST(path string, handler http.Handler) {
+	r.registerRoute(path, http.MethodPost, handler)
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	path := req.URL.Path
-	if hanlder, ok := r.routes[path]; ok {
-		hanlder.ServeHTTP(w, req)
-		return
-	}
+    pathHandlers, pathFound := r.routes[req.URL.Path]
+    if !pathFound {
+		api.RespondWithError(w, http.StatusNotFound, "Not Found")
+        return
+    }
 
-	http.NotFound(w, req)
+    handler, methodFound := pathHandlers[req.Method]
+    if !methodFound {
+		api.RespondWithError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+        return
+    }
+
+    handler.ServeHTTP(w, req)
 }

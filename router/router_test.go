@@ -14,7 +14,7 @@ func TestRouter(t *testing.T) {
 		fmt.Fprint(w, "success")
 	})
 
-	r.Handle("/test", testHandler)
+	r.GET("/test", testHandler)
 
 	t.Run("should call handler when path is registered", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/test", nil)
