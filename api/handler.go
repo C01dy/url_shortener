@@ -47,26 +47,21 @@ func RedirectHandler(storage LinkStorage) http.HandlerFunc {
 
 func CreateLinkHandler(storage LinkStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Error(w, `{"error": "Method not allowed"}`, http.StatusMethodNotAllowed)
-			return
-		}
-
 		body := r.Body
 		defer body.Close()
 		var requestBody CreateLinkRequest
 		if err := json.NewDecoder(body).Decode(&requestBody); err != nil {
-			http.Error(w, `{"error":"Bad request"}`, http.StatusBadRequest)
+			RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 			return
 		}
 
 		if requestBody.URL == "" {
-			http.Error(w, `{"error":"URL is required"}`, http.StatusBadRequest)
+			RespondWithError(w, http.StatusBadRequest, "URL is required")
 			return
 		}
 		code := generateShortCode()
 		if err := storage.Put(code, requestBody.URL); err != nil {
-			http.Error(w, `{"error":"Internal server error"}`, http.StatusInternalServerError)
+			RespondWithError(w, http.StatusInternalServerError, "Could not create short link")
 			return
 		}
 
@@ -74,8 +69,6 @@ func CreateLinkHandler(storage LinkStorage) http.HandlerFunc {
 			ShortURL: r.Host + "/" + code,
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(response)
+		RespondWithJSON(w, http.StatusCreated, response)
 	}
 }

@@ -12,7 +12,6 @@ type Config struct {
 
 func Load(path string) (*Config, error) {
 	config := &Config{}
-
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
